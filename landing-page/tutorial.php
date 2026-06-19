@@ -177,7 +177,7 @@
             </div>
             <div class="step">
                 <div class="step-num">2</div>
-                <div class="step-content"><p>Login: user <strong>admin</strong>, password <strong>admin@123</strong></p></div>
+                <div class="step-content"><p>Login: user <strong>admin</strong>, password <strong>admin</strong></p></div>
             </div>
             <div class="step">
                 <div class="step-num">3</div>
@@ -236,7 +236,7 @@
 
             <h3>Akses</h3>
             <code>http://ip-address/tiny.php</code>
-            <p>Login: <strong>admin</strong> / <strong>admin@123</strong></p>
+            <p>Login: <strong>admin</strong> / <strong>admin</strong></p>
 
             <h3>Fitur</h3>
             <ul>

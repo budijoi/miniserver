@@ -241,7 +241,7 @@ deploy_landing() {
         log_info "Mendeploy TinyFileManager..."
         curl -fsSL https://raw.githubusercontent.com/tinyfilemanager/tinyfilemanager/master/tinyfilemanager.php -o "$WWW_DIR/tiny.php" 2>/dev/null || true
         if [[ -f "$WWW_DIR/tiny.php" ]]; then
-            sed -i "s/\$use_auth = false;/\$use_auth = true;/" "$WWW_DIR/tiny.php" 2>/dev/null || true
+            configure_tinyfilemanager "$WWW_DIR/tiny.php"
             chown www-data:www-data "$WWW_DIR/tiny.php" 2>/dev/null || true
         fi
     fi
@@ -277,19 +277,17 @@ setup_tinyfilemanager() {
     configure_tinyfilemanager "$fm_path"
     chown www-data:www-data "$fm_path" 2>/dev/null || true
     chmod 644 "$fm_path"
-    log_ok "TinyFileManager: http://ip-address/tiny.php (user: admin, pass: admin@123)"
+    log_ok "TinyFileManager: http://ip-address/tiny.php (user: admin, pass: admin)"
 }
 
 configure_tinyfilemanager() {
     local path="$1"
-    # Generate password hash untuk admin@123
-    local pass_hash='$P$85pW0n5qVx5kFq6JK5I5i5p5j5K5l5'
-    sed -i "s/\$auth_users = array();/\$auth_users = array('admin' => '$pass_hash');/" "$path" 2>/dev/null || true
-    # Set root path ke / dan tambahkan /var/www
-    sed -i "s|\$root_path = '';|\$root_path = '/';|" "$path" 2>/dev/null || true
-    sed -i "s|\"..\" => \"..\",|\"MiniServer Root\" => \"/\", \"Landing Page\" => \"/var/www/html\", \"My Files\" => \"/opt/miniserver/www\",|" "$path" 2>/dev/null || true
-    # Nonaktifkan log aktivitas biar ringan
-    sed -i "s/\$use_auth = false;/\$use_auth = true;/" "$path" 2>/dev/null || true
+    # Default: admin/admin, root = $_SERVER['DOCUMENT_ROOT']
+    # Enable auth + set root ke / biar bisa akses seluruh filesystem
+    sed -i \
+      -e 's/$use_auth = false;/$use_auth = true;/' \
+      -e "s|\\\$root_path = .*|\\\$root_path = '/';|" \
+      "$path" 2>/dev/null || true
 }
 
 install_landing() {
@@ -535,7 +533,7 @@ if [[ "$1" == "--install-all" ]]; then
     echo -e "${GREEN}  INSTALASI SELESAI!${NC}"
     echo -e "${GREEN}========================================${NC}"
     echo "Landing:     http://$(hostname -I | awk '{print $1}')"
-    echo "File Mgr:   http://$(hostname -I | awk '{print $1}')/tiny.php (admin/admin@123)"
+    echo "File Mgr:   http://$(hostname -I | awk '{print $1}')/tiny.php (admin/admin)"
     echo "Squid:       port 3128"
 elif [[ "$1" == "--uninstall" && -n "$2" ]]; then
     case "$2" in

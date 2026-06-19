@@ -153,7 +153,7 @@ File manager berbasis PHP (1 file) dengan akses penuh ke root filesystem dan `/v
 
 Akses: `http://ip-address/tiny.php`
 - User: `admin`
-- Password: `admin@123`
+- Password: `admin`
 
 Fitur:
 - Navigasi root `/` dan `/var/www/html/`
