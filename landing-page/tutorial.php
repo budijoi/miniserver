@@ -113,7 +113,7 @@
                 <a href="#instal"><i class="fas fa-download"></i> Instal</a>
                 <a href="#edit"><i class="fas fa-edit"></i> Edit</a>
                 <a href="#hapus"><i class="fas fa-trash"></i> Hapus</a>
-                <a href="#filebrowser"><i class="fas fa-folder-open"></i> File Browser</a>
+                <a href="#filemanager"><i class="fas fa-folder-open"></i> File Manager</a>
                 <a href="#sdcard"><i class="fas fa-sd-card"></i> SDCard</a>
             </div>
         </div>
@@ -122,7 +122,7 @@
             <a href="#instal"><i class="fas fa-download"></i> Cara Instal</a>
             <a href="#edit"><i class="fas fa-edit"></i> Cara Edit</a>
             <a href="#hapus"><i class="fas fa-trash"></i> Cara Hapus</a>
-            <a href="#filebrowser"><i class="fas fa-folder-open"></i> File Browser</a>
+            <a href="#filemanager"><i class="fas fa-folder-open"></i> File Manager</a>
             <a href="#sdcard"><i class="fas fa-sd-card"></i> SDCard</a>
             <a href="#service"><i class="fas fa-cogs"></i> Service</a>
         </div>
@@ -151,7 +151,7 @@
             </div>
             <ul>
                 <li><strong>1</strong> - Landing Page (Nginx + PHP + Dashboard)</li>
-                <li><strong>2</strong> - File Browser (File Manager akses root)</li>
+                <li><strong>2</strong> - TinyFileManager (File Manager akses root)</li>
                 <li><strong>3</strong> - Squid-Cache (Proxy + Cache)</li>
                 <li><strong>4</strong> - Adblock (Pi-hole + Filter Indonesia)</li>
                 <li><strong>5</strong> - Setup SDCard sebagai storage utama</li>
@@ -159,7 +159,7 @@
             </ul>
 
             <h3>Install via CLI (Tanpa Menu)</h3>
-            <code>sudo ./installer/install.sh --install landing<br>sudo ./installer/install.sh --install filebrowser<br>sudo ./installer/install.sh --install squid<br>sudo ./installer/install.sh --install adblock<br>sudo ./installer/install.sh --install sdcard</code>
+            <code>sudo ./installer/install.sh --install landing<br>sudo ./installer/install.sh --install tiny<br>sudo ./installer/install.sh --install squid<br>sudo ./installer/install.sh --install adblock<br>sudo ./installer/install.sh --install sdcard</code>
 
             <div class="note">
                 <i class="fas fa-info-circle"></i> Installer otomatis mendeteksi aplikasi serupa dan port yang sudah terpakai.
@@ -170,20 +170,20 @@
         <div class="tutorial-card" id="edit">
             <h2><i class="fas fa-edit"></i> Cara Edit File</h2>
 
-            <h3>Via File Browser (Mudah)</h3>
+            <h3>Via TinyFileManager (Mudah)</h3>
             <div class="step">
                 <div class="step-num">1</div>
-                <div class="step-content"><p>Buka browser, akses <code>http://ip-address:8080</code></p></div>
+                <div class="step-content"><p>Buka browser, akses <code>http://ip-address/tiny.php</code></p></div>
             </div>
             <div class="step">
                 <div class="step-num">2</div>
-                <div class="step-content"><p>Login: user <strong>admin</strong>, password <strong>admin</strong></p></div>
+                <div class="step-content"><p>Login: user <strong>admin</strong>, password <strong>admin@123</strong></p></div>
             </div>
             <div class="step">
                 <div class="step-num">3</div>
                 <div class="step-content"><p>Navigasi ke folder yang ingin diedit, klik file, klik <strong>Edit</strong></p></div>
             </div>
-            <p>File yang bisa diedit: PHP, HTML, CSS, JS, TXT, JSON, XML, SH, PY, dll.</p>
+            <p>File yang bisa diedit: PHP, HTML, CSS, JS, TXT, JSON, XML, SH, PY, dll. Ada syntax highlighting dari CodeMirror.</p>
             <div class="note">
                 <i class="fas fa-folder-open"></i> Landing page berada di <code>/var/www/html/</code>
             </div>
@@ -217,7 +217,7 @@
             </div>
 
             <h3>Via Terminal (Manual)</h3>
-            <code># Hapus Nginx<br>sudo apt-get remove --purge -y nginx nginx-full<br><br># Hapus Squid<br>sudo apt-get remove --purge -y squid<br><br># Hapus Pi-hole<br>pihole uninstall<br><br># Hapus File Browser<br>sudo systemctl stop filebrowser<br>sudo systemctl disable filebrowser<br>sudo rm /usr/local/bin/filebrowser<br>sudo rm /etc/systemd/system/filebrowser.service</code>
+            <code># Hapus Nginx<br>sudo apt-get remove --purge -y nginx nginx-full<br><br># Hapus Squid<br>sudo apt-get remove --purge -y squid<br><br># Hapus Pi-hole<br>pihole uninstall<br><br># Hapus TinyFileManager<br>sudo rm /var/www/html/tiny.php</code>
 
             <h3>Hapus Landing Page</h3>
             <code>sudo rm -rf /var/www/html/*</code>
@@ -226,35 +226,36 @@
             </div>
 
             <h3>Hapus Seluruh MiniServer</h3>
-            <code># Backup dulu jika perlu<br>cp -r /var/www/html ~/backup-html<br><br># Hapus semua<br>sudo rm -rf /var/www/html<br>sudo rm -rf /opt/miniserver<br>sudo rm -rf /etc/filebrowser<br>sudo rm -f /etc/systemd/system/filebrowser.service</code>
+            <code># Backup dulu jika perlu<br>cp -r /var/www/html ~/backup-html<br><br># Hapus semua<br>sudo rm -rf /var/www/html<br>sudo rm -rf /opt/miniserver</code>
         </div>
 
-        <!-- FILE BROWSER -->
-        <div class="tutorial-card" id="filebrowser">
-            <h2><i class="fas fa-folder-open"></i> File Browser</h2>
-            <p>File manager berbasis web dengan akses penuh ke seluruh filesystem.</p>
+        <!-- FILE MANAGER -->
+        <div class="tutorial-card" id="filemanager">
+            <h2><i class="fas fa-folder-open"></i> TinyFileManager</h2>
+            <p>File manager berbasis PHP (1 file) dengan akses penuh ke seluruh filesystem. Ringan karena jalan di PHP yang sudah terinstall, tanpa perlu service tambahan.</p>
 
             <h3>Akses</h3>
-            <code>http://ip-address:8080</code>
-            <p>Login: <strong>admin</strong> / <strong>admin</strong></p>
+            <code>http://ip-address/tiny.php</code>
+            <p>Login: <strong>admin</strong> / <strong>admin@123</strong></p>
 
             <h3>Fitur</h3>
             <ul>
-                <li>Browse semua folder (termasuk <code>/</code> root dan <code>/var/www/</code>)</li>
+                <li>Browse root <code>/</code> dan <code>/var/www/html/</code></li>
                 <li>Upload & download file</li>
-                <li>Edit file langsung di browser</li>
+                <li>Edit file dengan <strong>syntax highlighting</strong></li>
                 <li>Buat folder & file baru</li>
                 <li>Rename, copy, move, delete</li>
-                <li>Preview: gambar, video, teks, PDF</li>
+                <li>Preview: gambar, video, audio, PDF</li>
                 <li>Search file</li>
+                <li>Zip & extract archive</li>
             </ul>
 
             <h3>Mengganti Password</h3>
-            <code>sudo filebrowser users update admin --password=newpassword</code>
+            <p>Edit file <code>/var/www/html/tiny.php</code>, cari bagian <code>$auth_users</code>, ganti password hash.</p>
+            <p>Atau bisa di-generate di: <a href="https://tinyfilemanager.github.io/tinyfilemanager/password_generator.html" target="_blank">TinyFileManager Password Generator</a></p>
 
-            <h3>Logs</h3>
-            <code>sudo journalctl -u filebrowser --no-pager -n 50</code>
-        </div>
+            <h3>Update</h3>
+            <code>sudo ./installer/install.sh --install tiny</code>
 
         <!-- SDCARD -->
         <div class="tutorial-card" id="sdcard">
@@ -290,7 +291,7 @@
             <code># Lihat semua service<br>sudo ./scripts/services.sh list<br><br># Cek status<br>sudo ./scripts/services.sh status nginx<br><br># Start service<br>sudo ./scripts/services.sh start nginx<br><br># Stop service<br>sudo ./scripts/services.sh stop nginx<br><br># Restart service<br>sudo ./scripts/services.sh restart nginx<br><br># Lihat log<br>sudo ./scripts/services.sh logs nginx -n 30</code>
 
             <h3>Systemctl Langsung</h3>
-            <code>sudo systemctl status nginx<br>sudo systemctl start squid<br>sudo systemctl stop filebrowser<br>sudo systemctl restart php8.2-fpm<br>sudo systemctl enable nginx<br>sudo systemctl disable apache2</code>
+            <code>sudo systemctl status nginx<br>sudo systemctl start squid<br>sudo systemctl restart php8.2-fpm<br>sudo systemctl enable nginx<br>sudo systemctl disable apache2</code>
 
             <h3>Monitoring Real-time</h3>
             <code>sudo ./scripts/monitor.sh -i 3</code>

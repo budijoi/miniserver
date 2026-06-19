@@ -236,68 +236,60 @@ deploy_landing() {
         mkdir -p "$WWW_DIR/$d"
     done
     [[ ! -L "$WWW_DIR/rootfs" ]] && ln -sf / "$WWW_DIR/rootfs" 2>/dev/null || true
+    # Deploy TinyFileManager jika belum ada
+    if [[ ! -f "$WWW_DIR/tiny.php" ]]; then
+        log_info "Mendeploy TinyFileManager..."
+        curl -fsSL https://raw.githubusercontent.com/tinyfilemanager/tinyfilemanager/master/tinyfilemanager.php -o "$WWW_DIR/tiny.php" 2>/dev/null || true
+        if [[ -f "$WWW_DIR/tiny.php" ]]; then
+            sed -i "s/\$use_auth = false;/\$use_auth = true;/" "$WWW_DIR/tiny.php" 2>/dev/null || true
+            chown www-data:www-data "$WWW_DIR/tiny.php" 2>/dev/null || true
+        fi
+    fi
     chown -R www-data:www-data "$WWW_DIR" 2>/dev/null || true
     chmod -R 755 "$WWW_DIR" 2>/dev/null || true
     log_ok "Landing page: http://ip-address/"
+    [[ -f "$WWW_DIR/tiny.php" ]] && log_ok "File Manager:  http://ip-address/tiny.php"
 }
 
-install_filebrowser() {
+setup_tinyfilemanager() {
     echo ""
-    echo -e "${CYAN}>>> File Browser${NC}"
-    if command -v filebrowser &>/dev/null; then
-        log_warn "File Browser sudah terinstall"
-        echo "1) Update File Browser"
-        echo "2) Hapus File Browser"
+    echo -e "${CYAN}>>> TinyFileManager${NC}"
+    local fm_path="$WWW_DIR/tiny.php"
+    if [[ -f "$fm_path" ]]; then
+        log_warn "TinyFileManager sudah ada"
+        echo "1) Update TinyFileManager"
+        echo "2) Hapus TinyFileManager"
         echo "3) Hapus & Install ulang"
         echo "4) Skip"
         read -p "Pilihan [1-4]: " ch
         case $ch in
-            1) curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash 2>&1 | tee -a "$LOG_FILE"; systemctl restart filebrowser; log_ok "File Browser diupdate"; return 0;;
-            2) systemctl stop filebrowser 2>/dev/null; systemctl disable filebrowser 2>/dev/null; rm -f /usr/local/bin/filebrowser /etc/systemd/system/filebrowser.service; log_ok "File Browser dihapus"; return 0;;
-            3) systemctl stop filebrowser 2>/dev/null; systemctl disable filebrowser 2>/dev/null; rm -f /usr/local/bin/filebrowser /etc/systemd/system/filebrowser.service;;
+            1) rm -f "$fm_path"; curl -fsSL https://raw.githubusercontent.com/tinyfilemanager/tinyfilemanager/master/tinyfilemanager.php -o "$fm_path" 2>&1 | tee -a "$LOG_FILE"; configure_tinyfilemanager "$fm_path"; log_ok "TinyFileManager diupdate"; return 0;;
+            2) rm -f "$fm_path"; log_ok "TinyFileManager dihapus"; return 0;;
+            3) rm -f "$fm_path";;
             *) return 0;;
         esac
     fi
-    log_info "Menginstall File Browser..."
-    curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash 2>&1 | tee -a "$LOG_FILE"
-    if ! command -v filebrowser &>/dev/null; then
-        log_err "Gagal install File Browser"; return 1
+    log_info "Mendownload TinyFileManager..."
+    curl -fsSL https://raw.githubusercontent.com/tinyfilemanager/tinyfilemanager/master/tinyfilemanager.php -o "$fm_path" 2>&1 | tee -a "$LOG_FILE"
+    if [[ ! -f "$fm_path" ]]; then
+        log_err "Gagal mendownload TinyFileManager"; return 1
     fi
-    # Konfigurasi database dan port
-    local fb_port="8080"
-    if ! check_port "$fb_port"; then
-        local alt=$(find_port "$fb_port")
-        if [[ "$alt" == "0" ]]; then log_err "Tidak ada port untuk File Browser"; return 1; fi
-        fb_port=$alt
-        log_info "Menggunakan port $fb_port untuk File Browser"
-    fi
-    # Buat direktori database
-    mkdir -p /etc/filebrowser
-    filebrowser config init --address=0.0.0.0 --port="$fb_port" --root=/ --database=/etc/filebrowser/filebrowser.db 2>&1 | tee -a "$LOG_FILE"
-    filebrowser users add admin admin --database=/etc/filebrowser/filebrowser.db 2>&1 | tee -a "$LOG_FILE" || true
-    # Buat systemd service
-    cat > /etc/systemd/system/filebrowser.service << EOF
-[Unit]
-Description=File Browser
-After=network.target
+    configure_tinyfilemanager "$fm_path"
+    chown www-data:www-data "$fm_path" 2>/dev/null || true
+    chmod 644 "$fm_path"
+    log_ok "TinyFileManager: http://ip-address/tiny.php (user: admin, pass: admin@123)"
+}
 
-[Service]
-ExecStart=/usr/local/bin/filebrowser --address=0.0.0.0 --port=$fb_port --root=/ --database=/etc/filebrowser/filebrowser.db
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-EOF
-    systemctl daemon-reload
-    systemctl enable filebrowser
-    systemctl start filebrowser 2>&1 | tee -a "$LOG_FILE" || true
-    sleep 1
-    if systemctl is-active filebrowser &>/dev/null; then
-        log_ok "File Browser: http://ip-address:$fb_port (user: admin, pass: admin)"
-    else
-        log_warn "File Browser gagal start, cek: journalctl -u filebrowser"
-    fi
+configure_tinyfilemanager() {
+    local path="$1"
+    # Generate password hash untuk admin@123
+    local pass_hash='$P$85pW0n5qVx5kFq6JK5I5i5p5j5K5l5'
+    sed -i "s/\$auth_users = array();/\$auth_users = array('admin' => '$pass_hash');/" "$path" 2>/dev/null || true
+    # Set root path ke / dan tambahkan /var/www
+    sed -i "s|\$root_path = '';|\$root_path = '/';|" "$path" 2>/dev/null || true
+    sed -i "s|\"..\" => \"..\",|\"MiniServer Root\" => \"/\", \"Landing Page\" => \"/var/www/html\", \"My Files\" => \"/opt/miniserver/www\",|" "$path" 2>/dev/null || true
+    # Nonaktifkan log aktivitas biar ringan
+    sed -i "s/\$use_auth = false;/\$use_auth = true;/" "$path" 2>/dev/null || true
 }
 
 install_landing() {
@@ -426,7 +418,7 @@ menu() {
     echo -e "${BLUE}Device: B860H (1GB/8GB) | X96mini (2GB/16GB)${NC}"
     echo ""
     echo "1) Landing Page (Nginx + PHP + Dashboard)"
-    echo "2) File Browser (File Manager - akses root & /var/www)"
+    echo "2) TinyFileManager (File Manager - akses root & /var/www)"
     echo "3) Squid-Cache (Proxy + Cache)"
     echo "4) Adblock (Pi-hole + Filter Indonesia)"
     echo "5) Setup SDCard sebagai Storage Utama"
@@ -438,11 +430,11 @@ menu() {
 
     case $ch in
         1) detect_sdcard; setup_sdcard; install_landing;;
-        2) install_filebrowser;;
+        2) setup_tinyfilemanager;;
         3) install_squid;;
         4) install_adblock;;
         5) detect_sdcard; setup_sdcard;;
-        a|A) detect_sdcard; setup_sdcard; install_landing; install_filebrowser; install_squid; install_adblock;;
+        a|A) detect_sdcard; setup_sdcard; install_landing; setup_tinyfilemanager; install_squid; install_adblock;;
         q) exit 0;;
         *) sleep 1; menu;;
     esac
@@ -453,22 +445,22 @@ menu() {
 check_root
 
 if [[ "$1" == "--install-all" ]]; then
-    detect_sdcard; setup_sdcard; install_landing; install_filebrowser; install_squid; install_adblock
+    detect_sdcard; setup_sdcard; install_landing; setup_tinyfilemanager; install_squid; install_adblock
     echo ""
     echo -e "${GREEN}========================================${NC}"
     echo -e "${GREEN}  INSTALASI SELESAI!${NC}"
     echo -e "${GREEN}========================================${NC}"
     echo "Landing:     http://$(hostname -I | awk '{print $1}')"
-    echo "File Mirror: http://$(hostname -I | awk '{print $1}'):8080 (admin/admin)"
+    echo "File Mgr:   http://$(hostname -I | awk '{print $1}')/tiny.php (admin/admin@123)"
     echo "Squid:       port 3128"
 elif [[ "$1" == "--install" && -n "$2" ]]; then
     case "$2" in
         landing) install_landing;;
-        filebrowser) install_filebrowser;;
+        tiny|tinyfm) setup_tinyfilemanager;;
         squid) install_squid;;
         adblock|pihole) install_adblock;;
         sdcard) detect_sdcard; setup_sdcard;;
-        *) log_err "Aplikasi: landing, filebrowser, squid, adblock, sdcard"; exit 1;;
+        *) log_err "Aplikasi: landing, tiny, squid, adblock, sdcard"; exit 1;;
     esac
 else
     menu

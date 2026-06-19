@@ -437,7 +437,7 @@ if (isset($_GET['ajax'])) {
                 <?php
                 $apps = [
                     ['name' => 'Tutorial', 'icon' => 'fas fa-graduation-cap', 'url' => 'tutorial.php', 'desc' => 'Panduan instalasi & pengaturan'],
-                    ['name' => 'File Browser', 'icon' => 'fas fa-folder-open', 'url' => 'http://' . ($_SERVER['SERVER_ADDR'] ?? 'localhost') . ':8080', 'desc' => 'Kelola file root & /var/www'],
+                    ['name' => 'File Manager', 'icon' => 'fas fa-folder-open', 'url' => 'tiny.php', 'desc' => 'Kelola file root & /var/www'],
                     ['name' => 'phpMyAdmin', 'icon' => 'fas fa-database', 'url' => 'phpmyadmin/', 'desc' => 'Manajemen database', 'check' => '/usr/share/phpmyadmin'],
                     ['name' => 'My Document', 'icon' => 'fas fa-file-alt', 'url' => 'My Document/', 'desc' => 'Dokumen pribadi'],
                     ['name' => 'My Music', 'icon' => 'fas fa-music', 'url' => 'My Music/', 'desc' => 'Koleksi musik'],
@@ -472,7 +472,7 @@ if (isset($_GET['ajax'])) {
             <div class="services-grid" id="servicesGrid">
                 <?php
                 $services = [
-                    'nginx', 'apache2', 'php8.2-fpm', 'squid', 'pihole-FTL', 'dnsmasq', 'filebrowser', 'ssh',
+                    'nginx', 'apache2', 'php8.2-fpm', 'squid', 'pihole-FTL', 'dnsmasq', 'ssh',
                 ];
                 foreach ($services as $svc):
                     $isActive = false;

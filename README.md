@@ -37,7 +37,7 @@ Pilih menu **a** untuk install semua, atau pilih satu per satu.
 
 ```
 1) Landing Page (Nginx + PHP + Dashboard)
-2) File Browser (File Manager - akses root & /var/www)
+2) TinyFileManager (File Manager - akses root & /var/www)
 3) Squid-Cache (Proxy + Cache)
 4) Adblock (Pi-hole + Filter Indonesia)
 5) Setup SDCard sebagai Storage Utama
@@ -118,21 +118,24 @@ Menampilkan informasi real-time (refresh tiap 5 detik):
 
 Ganti tema dari dropdown pojok kanan atas.
 
-## File Browser
+## TinyFileManager
 
-File manager dengan akses penuh ke root filesystem dan `/var/www/`.
+File manager berbasis PHP (1 file) dengan akses penuh ke root filesystem dan `/var/www/`.
 
-Akses: `http://ip-address:8080/`
+Akses: `http://ip-address/tiny.php`
 - User: `admin`
-- Password: `admin`
+- Password: `admin@123`
 
 Fitur:
-- Navigasi seluruh filesystem (root `/` dan `/var/www/`)
-- Upload, download, rename, delete file/folder
-- Preview gambar, teks, video
-- Edit file langsung dari browser
-- Multiple user support
+- Navigasi root `/` dan `/var/www/html/`
+- Upload, download, rename, copy, move, delete
+- Edit file dengan **syntax highlighting** (CodeMirror)
+- Preview gambar, video, audio, PDF
+- Buat folder & file baru
 - Search file
+- Zip/extract archive
+- Multi-user (di file config)
+- **Ringan** - jalan di PHP yg sudah terinstall, tanpa service/systemd tambahan
 
 ## Squid-Cache
 
