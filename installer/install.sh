@@ -138,20 +138,38 @@ handle_similar() {
 install_nginx() {
     handle_similar "nginx" "Nginx"; local rc=$?
     [[ $rc == 1 ]] && return 0
-    [[ $rc == 3 ]] && { apt-get remove --purge -y nginx 2>&1 | tee -a "$LOG_FILE"; return 0; }
+    [[ $rc == 3 ]] && { apt-get remove --purge -y nginx nginx-full nginx-light nginx-core 2>&1 | tee -a "$LOG_FILE"; return 0; }
     handle_port "nginx" "80,443" || return 0
-    if [[ $rc == 2 ]]; then apt-get install --only-upgrade -y nginx 2>&1 | tee -a "$LOG_FILE"; log_ok "Nginx diupdate"; return 0; fi
-    apt-get install -y nginx 2>&1 | tee -a "$LOG_FILE"
-    cat > /etc/nginx/sites-available/default << 'EOF'
+    if [[ $rc == 2 ]]; then
+        apt-get install --only-upgrade -y nginx-full nginx-light nginx-core 2>&1 | tee -a "$LOG_FILE" || apt-get install --only-upgrade -y nginx 2>&1 | tee -a "$LOG_FILE"
+        log_ok "Nginx diupdate"; return 0
+    fi
+    log_info "Mencoba install Nginx..."
+    for pkg in nginx-full nginx-light nginx-core nginx; do
+        apt-get install -y "$pkg" 2>&1 | tee -a "$LOG_FILE" && { NGX_OK=1; break; }
+    done
+    if [[ -z "$NGX_OK" ]]; then
+        log_err "Gagal install Nginx. Coba: apt-get update && apt-get install nginx"
+        log_info "Menggunakan Apache sebagai alternatif..."
+        install_apache
+        return 0
+    fi
+    local nginx_conf="/etc/nginx/sites-available/default"
+    [[ -d "/etc/nginx/sites-available" ]] || mkdir -p /etc/nginx/sites-available
+    cat > "$nginx_conf" << 'EOF'
 server {
     listen 80 default_server; listen [::]:80 default_server;
-    root /var/www/html; index index.php index.html;
+    root /var/www/html; index index.php index.html index.htm;
     server_name _;
     location / { try_files $uri $uri/ =404; }
     location ~ \.php$ { include snippets/fastcgi-php.conf; fastcgi_pass unix:/var/run/php/php8.2-fpm.sock; }
 }
 EOF
-    systemctl enable nginx; systemctl restart nginx
+    if [[ -d "/etc/nginx/sites-enabled" && ! -L "/etc/nginx/sites-enabled/default" ]]; then
+        ln -sf "$nginx_conf" /etc/nginx/sites-enabled/default 2>/dev/null || true
+    fi
+    systemctl enable nginx 2>/dev/null || true
+    systemctl restart nginx 2>&1 | tee -a "$LOG_FILE" || true
     log_ok "Nginx terinstall"
 }
 
@@ -168,9 +186,42 @@ install_apache() {
 }
 
 install_php() {
-    apt-get install -y php8.2 php8.2-fpm php8.2-mysql php8.2-mbstring php8.2-xml php8.2-curl php8.2-gd php8.2-zip 2>&1 | tee -a "$LOG_FILE"
-    systemctl enable php8.2-fpm; systemctl restart php8.2-fpm 2>/dev/null || true
-    log_ok "PHP 8.2 terinstall"
+    log_info "Menginstall PHP..."
+    local php_ver=""
+    for ver in 8.3 8.2 8.1 8.0; do
+        if apt-cache show "php${ver}-fpm" &>/dev/null 2>&1; then
+            php_ver="$ver"; break
+        fi
+    done
+    if [[ -z "$php_ver" ]]; then
+        log_info "Menjalankan apt-get update..."
+        apt-get update -qq 2>&1 | tee -a "$LOG_FILE"
+        for ver in 8.3 8.2 8.1 8.0; do
+            if apt-cache show "php${ver}-fpm" &>/dev/null 2>&1; then
+                php_ver="$ver"; break
+            fi
+        done
+    fi
+    if [[ -z "$php_ver" ]]; then
+        log_err "Tidak ada paket PHP-FPM tersedia. Install manual: apt-get install php-fpm"
+        # Fallback: coba install php-fpm (default version)
+        apt-get install -y php-fpm php-mysql php-mbstring php-xml php-curl php-gd php-zip 2>&1 | tee -a "$LOG_FILE" || true
+        PHP_FPM_SVC=$(systemctl list-units --type=service --state=running 2>/dev/null | grep php | head -1 | awk '{print $1}')
+        [[ -n "$PHP_FPM_SVC" ]] && log_ok "PHP ($PHP_FPM_SVC) terinstall" || log_warn "PHP mungkin gagal"
+        return 0
+    fi
+    apt-get install -y "php${php_ver}" "php${php_ver}-fpm" "php${php_ver}-mysql" \
+        "php${php_ver}-mbstring" "php${php_ver}-xml" "php${php_ver}-curl" \
+        "php${php_ver}-gd" "php${php_ver}-zip" 2>&1 | tee -a "$LOG_FILE"
+    systemctl enable "php${php_ver}-fpm" 2>/dev/null || true
+    systemctl restart "php${php_ver}-fpm" 2>/dev/null || true
+    # Update nginx config dengan versi PHP yang benar
+    local sock="/var/run/php/php${php_ver}-fpm.sock"
+    if [[ -f /etc/nginx/sites-available/default ]]; then
+        sed -i "s|fastcgi_pass unix:/var/run/php/php[0-9.]*-fpm.sock|fastcgi_pass unix:${sock}|" /etc/nginx/sites-available/default 2>/dev/null || true
+        systemctl restart nginx 2>/dev/null || true
+    fi
+    log_ok "PHP ${php_ver} terinstall"
 }
 
 deploy_landing() {
