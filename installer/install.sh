@@ -21,11 +21,11 @@ check_root() { if [[ $EUID -ne 0 ]]; then log_err "Jalankan dengan sudo"; exit 1
 
 detect_sdcard() {
     log_info "Mendeteksi SDCard..."
+    local root_dev=$(findmnt -n -o SOURCE / | sed 's/p[0-9]*$//' | sed 's/[0-9]*$//')
     for dev in /dev/mmcblk1 /dev/mmcblk2 /dev/sda /dev/sdb; do
-        if [[ -b "$dev" ]]; then
-            local removable=$(cat /sys/block/$(basename $dev)/removable 2>/dev/null || echo "0")
-            local ro=$(cat /sys/block/$(basename $dev)/ro 2>/dev/null || echo "0")
-            if [[ "$removable" == "1" && "$ro" == "0" ]]; then
+        if [[ -b "$dev" && "$dev" != "$root_dev" ]]; then
+            local size=$(cat /sys/block/$(basename $dev)/size 2>/dev/null || echo 0)
+            if [[ "$size" -gt 0 ]]; then
                 SDCARD_DEV="$dev"; break
             fi
         fi
@@ -33,7 +33,13 @@ detect_sdcard() {
     if [[ -z "$SDCARD_DEV" ]]; then
         log_warn "SDCard tidak terdeteksi otomatis"
         lsblk -d -o NAME,SIZE,TYPE,MOUNTPOINT 2>/dev/null | grep -E "mmc|sd" || true
-        read -p "Masukkan device SDCard (contoh: /dev/mmcblk1): " SDCARD_DEV
+        read -p "Masukkan device SDCard (contoh: /dev/mmcblk1): " input_dev
+        input_dev=$(echo "$input_dev" | xargs)
+        [[ "$input_dev" != /dev/* ]] && input_dev="/dev/$input_dev"
+        SDCARD_DEV="$input_dev"
+    fi
+    if [[ -n "$SDCARD_DEV" && ! -b "$SDCARD_DEV" ]]; then
+        log_err "Device $SDCARD_DEV tidak ditemukan"; SDCARD_DEV=""
     fi
     log_ok "SDCard: ${SDCARD_DEV:-tidak ada}"
 }

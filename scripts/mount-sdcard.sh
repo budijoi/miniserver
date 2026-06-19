@@ -51,7 +51,9 @@ detect_sdcard() {
         log_info "Device yang tersedia:"
         lsblk -d -o NAME,SIZE,TYPE,MOUNTPOINT | grep -E "mmc|sd"
         echo ""
-        read -p "Masukkan device SDCard secara manual (contoh: /dev/mmcblk1): " manual_dev
+        read -p "Masukkan device SDCard secara manual (contoh: mmcblk1): " manual_dev
+        manual_dev=$(echo "$manual_dev" | xargs)
+        [[ "$manual_dev" != /dev/* ]] && manual_dev="/dev/$manual_dev"
         if [[ -b "$manual_dev" ]]; then
             devices=("$manual_dev")
         else
