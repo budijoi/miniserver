@@ -438,16 +438,12 @@ if (isset($_GET['ajax'])) {
                 $apps = [
                     ['name' => 'File Manager', 'icon' => 'fas fa-folder-open', 'url' => 'file-manager/', 'desc' => 'Kelola file sistem'],
                     ['name' => 'phpMyAdmin', 'icon' => 'fas fa-database', 'url' => 'phpmyadmin/', 'desc' => 'Manajemen database', 'check' => '/usr/share/phpmyadmin'],
-                    ['name' => 'Netdata', 'icon' => 'fas fa-chart-line', 'url' => 'http://' . ($_SERVER['SERVER_ADDR'] ?? 'localhost') . ':19999', 'desc' => 'Monitoring sistem', 'check' => '/usr/sbin/netdata'],
-                    ['name' => 'Cockpit', 'icon' => 'fas fa-cocktail', 'url' => 'http://' . ($_SERVER['SERVER_ADDR'] ?? 'localhost') . ':9090', 'desc' => 'Manajemen server', 'check' => '/usr/bin/cockpit-bridge'],
-                    ['name' => 'Portainer', 'icon' => 'fab fa-docker', 'url' => 'https://' . ($_SERVER['SERVER_ADDR'] ?? 'localhost') . ':9443', 'desc' => 'Manajemen container', 'check' => '/usr/bin/docker'],
-                    ['name' => 'Jellyfin', 'icon' => 'fas fa-film', 'url' => 'http://' . ($_SERVER['SERVER_ADDR'] ?? 'localhost') . ':8096', 'desc' => 'Media server', 'check' => '/usr/bin/jellyfin'],
-                    ['name' => 'Transmission', 'icon' => 'fas fa-download', 'url' => 'http://' . ($_SERVER['SERVER_ADDR'] ?? 'localhost') . ':9091', 'desc' => 'Torrent client', 'check' => '/usr/bin/transmission-daemon'],
-                    ['name' => 'Syncthing', 'icon' => 'fas fa-sync', 'url' => 'http://' . ($_SERVER['SERVER_ADDR'] ?? 'localhost') . ':8384', 'desc' => 'Sinkronisasi file', 'check' => '/usr/bin/syncthing'],
                     ['name' => 'My Document', 'icon' => 'fas fa-file-alt', 'url' => 'My Document/', 'desc' => 'Dokumen pribadi'],
                     ['name' => 'My Music', 'icon' => 'fas fa-music', 'url' => 'My Music/', 'desc' => 'Koleksi musik'],
                     ['name' => 'My Pictures', 'icon' => 'fas fa-image', 'url' => 'My Pictures/', 'desc' => 'Album foto'],
                     ['name' => 'My Video', 'icon' => 'fas fa-video', 'url' => 'My Video/', 'desc' => 'Koleksi video'],
+                    ['name' => 'Squid-Proxy', 'icon' => 'fas fa-shield-alt', 'url' => 'http://' . ($_SERVER['SERVER_ADDR'] ?? 'localhost') . ':3128', 'desc' => 'Proxy cache', 'check' => '/usr/sbin/squid'],
+                    ['name' => 'Pi-hole', 'icon' => 'fas fa-ban', 'url' => 'http://' . ($_SERVER['SERVER_ADDR'] ?? 'localhost') . '/admin/', 'desc' => 'Adblock DNS', 'check' => '/usr/bin/pihole'],
                 ];
                 foreach ($apps as $app):
                     $isInstalled = true;
@@ -475,10 +471,7 @@ if (isset($_GET['ajax'])) {
             <div class="services-grid" id="servicesGrid">
                 <?php
                 $services = [
-                    'nginx', 'apache2', 'php8.2-fpm', 'mariadb', 'mysql',
-                    'redis-server', 'squid', 'pihole-FTL', 'dnsmasq',
-                    'docker', 'netdata', 'jellyfin', 'transmission-daemon',
-                    'syncthing@root', 'cockpit', 'ssh', 'cron',
+                    'nginx', 'apache2', 'php8.2-fpm', 'squid', 'pihole-FTL', 'dnsmasq', 'ssh',
                 ];
                 foreach ($services as $svc):
                     $isActive = false;
