@@ -139,6 +139,9 @@ install_nginx() {
     handle_similar "nginx" "Nginx"; local rc=$?
     [[ $rc == 1 ]] && return 0
     [[ $rc == 3 ]] && { apt-get remove --purge -y nginx nginx-full nginx-light nginx-core 2>&1 | tee -a "$LOG_FILE"; return 0; }
+    if [[ $rc == 4 ]]; then
+        apt-get remove --purge -y nginx nginx-full nginx-light nginx-core 2>&1 | tee -a "$LOG_FILE"
+    fi
     handle_port "nginx" "80,443" || return 0
     if [[ $rc == 2 ]]; then
         apt-get install --only-upgrade -y nginx-full nginx-light nginx-core 2>&1 | tee -a "$LOG_FILE" || apt-get install --only-upgrade -y nginx 2>&1 | tee -a "$LOG_FILE"
@@ -177,6 +180,7 @@ install_apache() {
     handle_similar "apache2" "Apache"; local rc=$?
     [[ $rc == 1 ]] && return 0
     [[ $rc == 3 ]] && { apt-get remove --purge -y apache2 2>&1 | tee -a "$LOG_FILE"; return 0; }
+    if [[ $rc == 4 ]]; then apt-get remove --purge -y apache2 2>&1 | tee -a "$LOG_FILE"; fi
     handle_port "apache2" "80,443" || return 0
     if [[ $rc == 2 ]]; then apt-get install --only-upgrade -y apache2 2>&1 | tee -a "$LOG_FILE"; log_ok "Apache diupdate"; return 0; fi
     apt-get install -y apache2 2>&1 | tee -a "$LOG_FILE"
@@ -225,10 +229,9 @@ install_php() {
 }
 
 deploy_landing() {
-    log_info "Mendeploy landing page & file manager..."
-    mkdir -p "$WWW_DIR" "$WWW_DIR/file-manager"
+    log_info "Mendeploy landing page..."
+    mkdir -p "$WWW_DIR"
     cp -r "$INSTALL_DIR/landing-page/"* "$WWW_DIR/"
-    cp -r "$INSTALL_DIR/file-manager/"* "$WWW_DIR/file-manager/"
     for d in "My Document" "My Music" "My Pictures" "My Video"; do
         mkdir -p "$WWW_DIR/$d"
     done
@@ -236,7 +239,65 @@ deploy_landing() {
     chown -R www-data:www-data "$WWW_DIR" 2>/dev/null || true
     chmod -R 755 "$WWW_DIR" 2>/dev/null || true
     log_ok "Landing page: http://ip-address/"
-    log_ok "File manager: http://ip-address/file-manager/"
+}
+
+install_filebrowser() {
+    echo ""
+    echo -e "${CYAN}>>> File Browser${NC}"
+    if command -v filebrowser &>/dev/null; then
+        log_warn "File Browser sudah terinstall"
+        echo "1) Update File Browser"
+        echo "2) Hapus File Browser"
+        echo "3) Hapus & Install ulang"
+        echo "4) Skip"
+        read -p "Pilihan [1-4]: " ch
+        case $ch in
+            1) curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash 2>&1 | tee -a "$LOG_FILE"; systemctl restart filebrowser; log_ok "File Browser diupdate"; return 0;;
+            2) systemctl stop filebrowser 2>/dev/null; systemctl disable filebrowser 2>/dev/null; rm -f /usr/local/bin/filebrowser /etc/systemd/system/filebrowser.service; log_ok "File Browser dihapus"; return 0;;
+            3) systemctl stop filebrowser 2>/dev/null; systemctl disable filebrowser 2>/dev/null; rm -f /usr/local/bin/filebrowser /etc/systemd/system/filebrowser.service;;
+            *) return 0;;
+        esac
+    fi
+    log_info "Menginstall File Browser..."
+    curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash 2>&1 | tee -a "$LOG_FILE"
+    if ! command -v filebrowser &>/dev/null; then
+        log_err "Gagal install File Browser"; return 1
+    fi
+    # Konfigurasi database dan port
+    local fb_port="8080"
+    if ! check_port "$fb_port"; then
+        local alt=$(find_port "$fb_port")
+        if [[ "$alt" == "0" ]]; then log_err "Tidak ada port untuk File Browser"; return 1; fi
+        fb_port=$alt
+        log_info "Menggunakan port $fb_port untuk File Browser"
+    fi
+    # Buat direktori database
+    mkdir -p /etc/filebrowser
+    filebrowser config init --address=0.0.0.0 --port="$fb_port" --root=/ --database=/etc/filebrowser/filebrowser.db 2>&1 | tee -a "$LOG_FILE"
+    filebrowser users add admin admin --database=/etc/filebrowser/filebrowser.db 2>&1 | tee -a "$LOG_FILE" || true
+    # Buat systemd service
+    cat > /etc/systemd/system/filebrowser.service << EOF
+[Unit]
+Description=File Browser
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/filebrowser --address=0.0.0.0 --port=$fb_port --root=/ --database=/etc/filebrowser/filebrowser.db
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl daemon-reload
+    systemctl enable filebrowser
+    systemctl start filebrowser 2>&1 | tee -a "$LOG_FILE" || true
+    sleep 1
+    if systemctl is-active filebrowser &>/dev/null; then
+        log_ok "File Browser: http://ip-address:$fb_port (user: admin, pass: admin)"
+    else
+        log_warn "File Browser gagal start, cek: journalctl -u filebrowser"
+    fi
 }
 
 install_landing() {
@@ -261,6 +322,7 @@ install_squid() {
     handle_similar "squid" "Squid-Cache"; local rc=$?
     [[ $rc == 1 ]] && return 0
     [[ $rc == 3 ]] && { apt-get remove --purge -y squid 2>&1 | tee -a "$LOG_FILE"; log_ok "Squid dihapus"; return 0; }
+    if [[ $rc == 4 ]]; then apt-get remove --purge -y squid 2>&1 | tee -a "$LOG_FILE"; fi
     handle_port "squid" "3128" || return 0
     if [[ $rc == 2 ]]; then
         apt-get install --only-upgrade -y squid 2>&1 | tee -a "$LOG_FILE"
@@ -363,22 +425,24 @@ menu() {
     echo -e "${YELLOW}Armbian TV Box All-In-One Installer${NC}"
     echo -e "${BLUE}Device: B860H (1GB/8GB) | X96mini (2GB/16GB)${NC}"
     echo ""
-    echo "1) Landing Page + File Manager (Nginx + PHP + Dashboard)"
-    echo "2) Squid-Cache (Proxy + Cache)"
-    echo "3) Adblock (Pi-hole + Filter Indonesia)"
-    echo "4) Setup SDCard sebagai Storage Utama"
+    echo "1) Landing Page (Nginx + PHP + Dashboard)"
+    echo "2) File Browser (File Manager - akses root & /var/www)"
+    echo "3) Squid-Cache (Proxy + Cache)"
+    echo "4) Adblock (Pi-hole + Filter Indonesia)"
+    echo "5) Setup SDCard sebagai Storage Utama"
     echo ""
-    echo "a) Install Semua (1+2+3+4)"
+    echo "a) Install Semua (1+2+3+4+5)"
     echo "q) Keluar"
     echo ""
     read -p "Pilihan: " ch
 
     case $ch in
         1) detect_sdcard; setup_sdcard; install_landing;;
-        2) install_squid;;
-        3) install_adblock;;
-        4) detect_sdcard; setup_sdcard;;
-        a|A) detect_sdcard; setup_sdcard; install_landing; install_squid; install_adblock;;
+        2) install_filebrowser;;
+        3) install_squid;;
+        4) install_adblock;;
+        5) detect_sdcard; setup_sdcard;;
+        a|A) detect_sdcard; setup_sdcard; install_landing; install_filebrowser; install_squid; install_adblock;;
         q) exit 0;;
         *) sleep 1; menu;;
     esac
@@ -389,21 +453,22 @@ menu() {
 check_root
 
 if [[ "$1" == "--install-all" ]]; then
-    detect_sdcard; setup_sdcard; install_landing; install_squid; install_adblock
+    detect_sdcard; setup_sdcard; install_landing; install_filebrowser; install_squid; install_adblock
     echo ""
     echo -e "${GREEN}========================================${NC}"
     echo -e "${GREEN}  INSTALASI SELESAI!${NC}"
     echo -e "${GREEN}========================================${NC}"
-    echo "Landing: http://$(hostname -I | awk '{print $1}')"
-    echo "File Mgr: http://$(hostname -I | awk '{print $1}')/file-manager/"
-    echo "Squid: port 3128"
+    echo "Landing:     http://$(hostname -I | awk '{print $1}')"
+    echo "File Mirror: http://$(hostname -I | awk '{print $1}'):8080 (admin/admin)"
+    echo "Squid:       port 3128"
 elif [[ "$1" == "--install" && -n "$2" ]]; then
     case "$2" in
         landing) install_landing;;
+        filebrowser) install_filebrowser;;
         squid) install_squid;;
         adblock|pihole) install_adblock;;
         sdcard) detect_sdcard; setup_sdcard;;
-        *) log_err "Aplikasi: landing, squid, adblock, sdcard"; exit 1;;
+        *) log_err "Aplikasi: landing, filebrowser, squid, adblock, sdcard"; exit 1;;
     esac
 else
     menu

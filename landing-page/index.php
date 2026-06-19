@@ -436,7 +436,7 @@ if (isset($_GET['ajax'])) {
             <div class="apps-grid" id="appsGrid">
                 <?php
                 $apps = [
-                    ['name' => 'File Manager', 'icon' => 'fas fa-folder-open', 'url' => 'file-manager/', 'desc' => 'Kelola file sistem'],
+                    ['name' => 'File Browser', 'icon' => 'fas fa-folder-open', 'url' => 'http://' . ($_SERVER['SERVER_ADDR'] ?? 'localhost') . ':8080', 'desc' => 'Kelola file root & /var/www'],
                     ['name' => 'phpMyAdmin', 'icon' => 'fas fa-database', 'url' => 'phpmyadmin/', 'desc' => 'Manajemen database', 'check' => '/usr/share/phpmyadmin'],
                     ['name' => 'My Document', 'icon' => 'fas fa-file-alt', 'url' => 'My Document/', 'desc' => 'Dokumen pribadi'],
                     ['name' => 'My Music', 'icon' => 'fas fa-music', 'url' => 'My Music/', 'desc' => 'Koleksi musik'],
@@ -471,7 +471,7 @@ if (isset($_GET['ajax'])) {
             <div class="services-grid" id="servicesGrid">
                 <?php
                 $services = [
-                    'nginx', 'apache2', 'php8.2-fpm', 'squid', 'pihole-FTL', 'dnsmasq', 'ssh',
+                    'nginx', 'apache2', 'php8.2-fpm', 'squid', 'pihole-FTL', 'dnsmasq', 'filebrowser', 'ssh',
                 ];
                 foreach ($services as $svc):
                     $isActive = false;

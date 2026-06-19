@@ -36,11 +36,12 @@ Pilih menu **a** untuk install semua, atau pilih satu per satu.
 ## Menu Installer
 
 ```
-1) Landing Page + File Manager (Nginx + PHP + Dashboard)
-2) Squid-Cache (Proxy + Cache)
-3) Adblock (Pi-hole + Filter Indonesia)
-4) Setup SDCard sebagai Storage Utama
-a) Install Semua (1+2+3+4)
+1) Landing Page (Nginx + PHP + Dashboard)
+2) File Browser (File Manager - akses root & /var/www)
+3) Squid-Cache (Proxy + Cache)
+4) Adblock (Pi-hole + Filter Indonesia)
+5) Setup SDCard sebagai Storage Utama
+a) Install Semua (1+2+3+4+5)
 ```
 
 ### Deteksi Aplikasi Serupa
@@ -76,7 +77,6 @@ miniserver/
 │   └── themes/
 │       └── settings.json        # Konfigurasi tema
 ├── file-manager/
-│   └── index.php                # File manager web
 ├── config/
 │   ├── squid/
 │   │   └── squid.conf           # Konfigurasi Squid-Cache
@@ -118,17 +118,21 @@ Menampilkan informasi real-time (refresh tiap 5 detik):
 
 Ganti tema dari dropdown pojok kanan atas.
 
-## File Manager
+## File Browser
 
-Akses langsung: `http://ip-address/file-manager/`
+File manager dengan akses penuh ke root filesystem dan `/var/www/`.
+
+Akses: `http://ip-address:8080/`
+- User: `admin`
+- Password: `admin`
 
 Fitur:
-- Navigasi folder root `/` dan `/var/www/`
-- Buat folder & file baru
-- Edit file (teks, php, html, css, js, dll)
-- Upload file
-- Hapus file/folder
-- Lihat permission dan ukuran file
+- Navigasi seluruh filesystem (root `/` dan `/var/www/`)
+- Upload, download, rename, delete file/folder
+- Preview gambar, teks, video
+- Edit file langsung dari browser
+- Multiple user support
+- Search file
 
 ## Squid-Cache
 
