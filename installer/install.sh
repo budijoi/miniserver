@@ -78,7 +78,7 @@ detect_similar_apps() {
         nginx) [[ -f /usr/sbin/apache2 ]] && found+="apache2 "; [[ -f /usr/bin/caddy ]] && found+="caddy ";;
         apache2) [[ -f /usr/sbin/nginx ]] && found+="nginx ";;
         squid) [[ -f /usr/sbin/tinyproxy ]] && found+="tinyproxy "; [[ -f /usr/sbin/haproxy ]] && found+="haproxy ";;
-        adblock) [[ -f /usr/bin/pihole ]] && found+="pihole ";;
+        adblock) [[ -f /etc/dnsmasq.d/adblock.conf ]] && found+="dnsmasq-adblock ";;
     esac; echo "$found"
 }
 
@@ -334,40 +334,37 @@ install_squid() {
 
 install_adblock() {
     echo ""
-    echo -e "${CYAN}>>> Adblock${NC}"
+    echo -e "${CYAN}>>> Adblock (dnsmasq)${NC}"
+
     if [[ -f /usr/bin/pihole ]]; then
-        log_warn "Pi-hole sudah terinstall"
-        echo "1) Update filter"
-        echo "2) Hapus Pi-hole"
-        echo "3) Hapus & Install ulang"
-        echo "4) Skip"
+        log_warn "Pi-hole terdeteksi, harus dihapus dulu"
+        echo "  1) Hapus Pi-hole & Install dnsmasq adblock"
+        echo "  2) Skip"
+        read -p "Pilihan [1-2]: " ch
+        [[ "$ch" != "1" ]] && return 0
+        pihole uninstall 2>&1 | tee -a "$LOG_FILE"
+        log_ok "Pi-hole dihapus"
+    fi
+
+    if [[ -f /etc/dnsmasq.d/adblock.conf ]]; then
+        log_warn "dnsmasq adblock sudah terinstall"
+        echo "  1) Update filter"
+        echo "  2) Hapus"
+        echo "  3) Hapus & Install ulang"
+        echo "  4) Skip"
         read -p "Pilihan [1-4]: " ch
         case $ch in
-            1) pihole updateGravity 2>&1 | tee -a "$LOG_FILE"; log_ok "Filter diupdate"; return 0;;
-            2) pihole uninstall 2>&1 | tee -a "$LOG_FILE"; log_ok "Pi-hole dihapus"; return 0;;
-            3) pihole uninstall 2>&1 | tee -a "$LOG_FILE"; curl -sSL https://install.pi-hole.net | bash 2>&1 | tee -a "$LOG_FILE";;
+            1) install_dnsmasq_adblock; return 0;;
+            2) rm -f /etc/dnsmasq.d/adblock.conf /etc/dnsmasq.d/adblock.hosts
+               systemctl restart dnsmasq 2>/dev/null || true
+               log_ok "dnsmasq adblock dihapus"
+               return 0;;
+            3) rm -f /etc/dnsmasq.d/adblock.conf /etc/dnsmasq.d/adblock.hosts;;
             *) return 0;;
         esac
-    else
-        log_info "Menginstall Pi-hole..."
-        curl -sSL https://install.pi-hole.net | bash 2>&1 | tee -a "$LOG_FILE" || true
     fi
-    if [[ -f /usr/bin/pihole ]]; then
-        log_info "Menambahkan filter Indonesia..."
-        pihole -a adlist add https://raw.githubusercontent.com/rey_public/filter/main/indonesian-adlist.txt 2>/dev/null || true
-        pihole -a adlist add https://raw.githubusercontent.com/rey_public/filter/main/indonesian-privacy.txt 2>/dev/null || true
-        if [[ -f "$INSTALL_DIR/config/adblock/filter-indo.txt" ]]; then
-            while IFS= read -r line; do
-                [[ -z "$line" || "$line" == \#* ]] && continue
-                pihole -b "$line" 2>/dev/null || true
-            done < "$INSTALL_DIR/config/adblock/filter-indo.txt"
-        fi
-        pihole updateGravity 2>&1 | tee -a "$LOG_FILE"
-        log_ok "Pi-hole + filter Indonesia terinstall"
-    else
-        log_warn "Pi-hole gagal, fallback ke dnsmasq adblock..."
-        install_dnsmasq_adblock
-    fi
+
+    install_dnsmasq_adblock
 }
 
 install_dnsmasq_adblock() {
@@ -469,7 +466,7 @@ uninstall_menu() {
     echo "1) Landing Page (Nginx + PHP)"
     echo "2) TinyFileManager"
     echo "3) Squid-Cache"
-    echo "4) Adblock (Pi-hole)"
+    echo "4) Adblock (dnsmasq)"
     echo ""
     echo "a) Hapus Semua"
     echo "b) Kembali ke Menu Utama"
@@ -500,7 +497,7 @@ menu() {
     echo "1) Landing Page (Nginx + PHP + Dashboard)"
     echo "2) TinyFileManager (File Manager - akses root & /var/www)"
     echo "3) Squid-Cache (Proxy + Cache)"
-    echo "4) Adblock (Pi-hole + Filter Indonesia)"
+    echo "4) Adblock (dnsmasq + Filter Indonesia)"
     echo "5) Setup SDCard sebagai Storage Utama"
     echo ""
     echo "h) Hapus Aplikasi (uninstall)"
@@ -540,7 +537,7 @@ elif [[ "$1" == "--uninstall" && -n "$2" ]]; then
         landing) uninstall_landing;;
         tiny|tinyfm) uninstall_tinyfm;;
         squid) uninstall_squid;;
-        adblock|pihole) uninstall_adblock;;
+        adblock) uninstall_adblock;;
         all) uninstall_landing; uninstall_tinyfm; uninstall_squid; uninstall_adblock; log_ok "Semua dihapus";;
         *) log_err "Aplikasi: landing, tiny, squid, adblock, all"; exit 1;;
     esac
@@ -549,7 +546,7 @@ elif [[ "$1" == "--install" && -n "$2" ]]; then
         landing) install_landing;;
         tiny|tinyfm) setup_tinyfilemanager;;
         squid) install_squid;;
-        adblock|pihole) install_adblock;;
+        adblock) install_adblock;;
         sdcard) detect_sdcard; setup_sdcard;;
         *) log_err "Aplikasi: landing, tiny, squid, adblock, sdcard"; exit 1;;
     esac
