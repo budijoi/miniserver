@@ -226,16 +226,17 @@ install_php() {
 
 deploy_landing() {
     log_info "Mendeploy landing page & file manager..."
-    mkdir -p "$WWW_DIR"
+    mkdir -p "$WWW_DIR" "$WWW_DIR/file-manager"
     cp -r "$INSTALL_DIR/landing-page/"* "$WWW_DIR/"
-    cp -r "$INSTALL_DIR/file-manager/"* "$WWW_DIR/"
+    cp -r "$INSTALL_DIR/file-manager/"* "$WWW_DIR/file-manager/"
     for d in "My Document" "My Music" "My Pictures" "My Video"; do
         mkdir -p "$WWW_DIR/$d"
     done
     [[ ! -L "$WWW_DIR/rootfs" ]] && ln -sf / "$WWW_DIR/rootfs" 2>/dev/null || true
     chown -R www-data:www-data "$WWW_DIR" 2>/dev/null || true
     chmod -R 755 "$WWW_DIR" 2>/dev/null || true
-    log_ok "Landing page siap di $WWW_DIR"
+    log_ok "Landing page: http://ip-address/"
+    log_ok "File manager: http://ip-address/file-manager/"
 }
 
 install_landing() {
