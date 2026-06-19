@@ -3,7 +3,7 @@ session_start();
 
 // Konfigurasi
 $config = [
-    'site_name' => 'MiniServer',
+    'site_name' => 'STB MINI SERVER',
     'theme' => $_COOKIE['theme'] ?? 'modern',
     'refresh_interval' => 5, // detik
     'admin_email' => 'admin@localhost',

@@ -1,4 +1,4 @@
-# MiniServer - Armbian TV Box Web Server
+# STB MINI SERVER - For Armbian
 
 Proyek untuk menjadikan TV Box (B860H, X96mini) sebagai web server dengan Armbian di SDCard.
 

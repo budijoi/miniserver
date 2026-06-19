@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tutorial - MiniServer</title>
+    <title>Tutorial - STB MINI SERVER</title>
     <link rel="stylesheet" href="css/modern.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
@@ -107,7 +107,7 @@
         <a href="./" class="back-link"><i class="fas fa-arrow-left"></i> Kembali ke Dashboard</a>
 
         <div class="tutorial-card" style="text-align:center;padding:32px;">
-            <h1 style="font-size:1.8em;margin-bottom:8px;"><i class="fas fa-graduation-cap" style="color:var(--accent)"></i> Tutorial MiniServer</h1>
+            <h1 style="font-size:1.8em;margin-bottom:8px;"><i class="fas fa-graduation-cap" style="color:var(--accent)"></i> Tutorial STB MINI SERVER</h1>
             <p style="color:var(--text-secondary);">Panduan instalasi, pengeditan file, dan manajemen aplikasi di TV Box Armbian</p>
             <div class="tab-nav" style="justify-content:center;margin-top:16px;">
                 <a href="#instal"><i class="fas fa-download"></i> Instal</a>
@@ -225,7 +225,7 @@
                 <i class="fas fa-exclamation-triangle"></i> Perintah di atas akan menghapus SEMUA file di landing page.
             </div>
 
-            <h3>Hapus Seluruh MiniServer</h3>
+            <h3>Hapus Seluruh STB MINI SERVER</h3>
             <code># Backup dulu jika perlu<br>cp -r /var/www/html ~/backup-html<br><br># Hapus semua<br>sudo rm -rf /var/www/html<br>sudo rm -rf /opt/miniserver</code>
         </div>
 
@@ -299,7 +299,7 @@
         </div>
 
         <footer style="text-align:center;padding:24px;color:var(--text-secondary);font-size:0.85em;">
-            <p>MiniServer &copy; 2025 | <a href="./" style="color:var(--accent);">Kembali ke Dashboard</a></p>
+            <p>STB MINI SERVER &copy; 2025 | <a href="./" style="color:var(--accent);">Kembali ke Dashboard</a></p>
         </footer>
     </div>
 </body>
