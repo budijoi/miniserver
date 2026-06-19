@@ -31,18 +31,47 @@ chmod +x installer/install.sh
 ./installer/install.sh
 ```
 
-Pilih menu **a** untuk install semua, atau pilih satu per satu.
+Pilih menu sesuai kebutuhan. Tersedia juga menu **h** untuk menghapus aplikasi.
 
 ## Menu Installer
 
 ```
-1) Landing Page (Nginx + PHP + Dashboard)
-2) TinyFileManager (File Manager - akses root & /var/www)
-3) Squid-Cache (Proxy + Cache)
-4) Adblock (Pi-hole + Filter Indonesia)
-5) Setup SDCard sebagai Storage Utama
-h) Hapus Aplikasi (uninstall)
-a) Install Semua (1+2+3+4+5)
+╔══════════════════════════════════════╗
+║   INSTALASI                         ║
+╠══════════════════════════════════════╣
+║ 1) Landing Page (Nginx + PHP + Dashboard)
+║ 2) TinyFileManager (File Manager)
+║ 3) Squid-Cache (Proxy + Cache)
+║ 4) Adblock (Pi-hole + Filter Indonesia)
+║ 5) Setup SDCard sebagai Storage Utama
+║ a) Install Semua (1+2+3+4+5)
+╠══════════════════════════════════════╣
+║   HAPUS (tekan h)                   ║
+╠══════════════════════════════════════╣
+║ 1) Landing Page (Nginx + PHP)
+║ 2) TinyFileManager
+║ 3) Squid-Cache
+║ 4) Adblock
+║ a) Hapus Semua
+╚══════════════════════════════════════╝
+```
+
+### CLI (Langsung dari Terminal)
+
+```bash
+# Install
+sudo ./installer/install.sh --install landing
+sudo ./installer/install.sh --install tiny
+sudo ./installer/install.sh --install squid
+sudo ./installer/install.sh --install adblock
+sudo ./installer/install.sh --install-all        # Install semua
+
+# Uninstall
+sudo ./installer/install.sh --uninstall landing
+sudo ./installer/install.sh --uninstall tiny
+sudo ./installer/install.sh --uninstall squid
+sudo ./installer/install.sh --uninstall adblock
+sudo ./installer/install.sh --uninstall all      # Hapus semua
 ```
 
 ### Deteksi Aplikasi Serupa
@@ -77,7 +106,6 @@ miniserver/
 │   │   └── main.js              # JavaScript dashboard
 │   └── themes/
 │       └── settings.json        # Konfigurasi tema
-├── file-manager/
 ├── config/
 │   ├── squid/
 │   │   └── squid.conf           # Konfigurasi Squid-Cache
