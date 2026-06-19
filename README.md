@@ -41,6 +41,7 @@ Pilih menu **a** untuk install semua, atau pilih satu per satu.
 3) Squid-Cache (Proxy + Cache)
 4) Adblock (Pi-hole + Filter Indonesia)
 5) Setup SDCard sebagai Storage Utama
+h) Hapus Aplikasi (uninstall)
 a) Install Semua (1+2+3+4+5)
 ```
 

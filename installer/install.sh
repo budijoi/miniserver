@@ -402,6 +402,96 @@ EOF
     log_ok "dnsmasq adblock terinstall ($(wc -l < /etc/dnsmasq.d/adblock.hosts) domain)"
 }
 
+# ==================== UNINSTALL ====================
+
+uninstall_landing() {
+    echo ""
+    echo -e "${YELLOW}>>> Hapus Landing Page${NC}"
+    echo "Akan menghapus: Nginx, PHP, dan file landing page"
+    read -p "Lanjutkan? (y/N): " yn
+    [[ ! "$yn" =~ ^[Yy]$ ]] && return 0
+    apt-get remove --purge -y nginx nginx-full nginx-light nginx-core 2>&1 | tee -a "$LOG_FILE" || true
+    rm -rf "$WWW_DIR"/*
+    log_ok "Landing page dan Nginx dihapus"
+}
+
+uninstall_tinyfm() {
+    echo ""
+    echo -e "${YELLOW}>>> Hapus TinyFileManager${NC}"
+    if [[ ! -f "$WWW_DIR/tiny.php" ]]; then
+        log_warn "TinyFileManager tidak ditemukan"; return 0
+    fi
+    read -p "Hapus TinyFileManager? (y/N): " yn
+    [[ ! "$yn" =~ ^[Yy]$ ]] && return 0
+    rm -f "$WWW_DIR/tiny.php"
+    log_ok "TinyFileManager dihapus"
+}
+
+uninstall_squid() {
+    echo ""
+    echo -e "${YELLOW}>>> Hapus Squid-Cache${NC}"
+    if ! command -v squid &>/dev/null && [[ ! -f /usr/sbin/squid ]]; then
+        log_warn "Squid tidak terinstall"; return 0
+    fi
+    read -p "Hapus Squid-Cache? (y/N): " yn
+    [[ ! "$yn" =~ ^[Yy]$ ]] && return 0
+    systemctl stop squid 2>/dev/null || true
+    apt-get remove --purge -y squid 2>&1 | tee -a "$LOG_FILE" || true
+    log_ok "Squid-Cache dihapus"
+}
+
+uninstall_adblock() {
+    echo ""
+    echo -e "${YELLOW}>>> Hapus Adblock${NC}"
+    if [[ -f /usr/bin/pihole ]]; then
+        read -p "Hapus Pi-hole? (y/N): " yn
+        [[ ! "$yn" =~ ^[Yy]$ ]] && return 0
+        pihole uninstall 2>&1 | tee -a "$LOG_FILE"
+        log_ok "Pi-hole dihapus"
+    elif [[ -f /etc/dnsmasq.d/adblock.conf ]]; then
+        read -p "Hapus dnsmasq adblock? (y/N): " yn
+        [[ ! "$yn" =~ ^[Yy]$ ]] && return 0
+        rm -f /etc/dnsmasq.d/adblock.conf /etc/dnsmasq.d/adblock.hosts
+        systemctl restart dnsmasq 2>/dev/null || true
+        log_ok "dnsmasq adblock dihapus"
+    else
+        log_warn "Tidak ada adblock terinstall"
+    fi
+}
+
+uninstall_menu() {
+    clear
+    echo -e "${RED}"
+    echo "  __  __ _       _  _____                _"
+    echo " |  \/  (_)     (_)/ ____|              | |"
+    echo " | \  / |_ _ __  _| (___   ___ _ __   __| |"
+    echo " | |\/| | | '_ \| |\___ \ / _ \ '_ \ / _\` |"
+    echo " | |  | | | | | | |____) |  __/ | | | (_| |"
+    echo " |_|  |_|_|_| |_|_|_____/ \___|_| |_|\__,_|"
+    echo -e "${NC}"
+    echo -e "${RED}   HAPUS APLIKASI${NC}"
+    echo "=============================="
+    echo ""
+    echo "1) Landing Page (Nginx + PHP)"
+    echo "2) TinyFileManager"
+    echo "3) Squid-Cache"
+    echo "4) Adblock (Pi-hole)"
+    echo ""
+    echo "a) Hapus Semua"
+    echo "b) Kembali ke Menu Utama"
+    echo ""
+    read -p "Pilihan: " ch
+    case $ch in
+        1) uninstall_landing; read -p "Enter untuk kembali..."; uninstall_menu;;
+        2) uninstall_tinyfm; read -p "Enter untuk kembali..."; uninstall_menu;;
+        3) uninstall_squid; read -p "Enter untuk kembali..."; uninstall_menu;;
+        4) uninstall_adblock; read -p "Enter untuk kembali..."; uninstall_menu;;
+        a|A) uninstall_landing; uninstall_tinyfm; uninstall_squid; uninstall_adblock; log_ok "Semua aplikasi dihapus";;
+        b|B) menu;;
+        *) uninstall_menu;;
+    esac
+}
+
 # ==================== MENU ====================
 
 menu() {
@@ -423,6 +513,7 @@ menu() {
     echo "4) Adblock (Pi-hole + Filter Indonesia)"
     echo "5) Setup SDCard sebagai Storage Utama"
     echo ""
+    echo "h) Hapus Aplikasi (uninstall)"
     echo "a) Install Semua (1+2+3+4+5)"
     echo "q) Keluar"
     echo ""
@@ -434,6 +525,7 @@ menu() {
         3) install_squid;;
         4) install_adblock;;
         5) detect_sdcard; setup_sdcard;;
+        h|H) uninstall_menu;;
         a|A) detect_sdcard; setup_sdcard; install_landing; setup_tinyfilemanager; install_squid; install_adblock;;
         q) exit 0;;
         *) sleep 1; menu;;
@@ -453,6 +545,15 @@ if [[ "$1" == "--install-all" ]]; then
     echo "Landing:     http://$(hostname -I | awk '{print $1}')"
     echo "File Mgr:   http://$(hostname -I | awk '{print $1}')/tiny.php (admin/admin@123)"
     echo "Squid:       port 3128"
+elif [[ "$1" == "--uninstall" && -n "$2" ]]; then
+    case "$2" in
+        landing) uninstall_landing;;
+        tiny|tinyfm) uninstall_tinyfm;;
+        squid) uninstall_squid;;
+        adblock|pihole) uninstall_adblock;;
+        all) uninstall_landing; uninstall_tinyfm; uninstall_squid; uninstall_adblock; log_ok "Semua dihapus";;
+        *) log_err "Aplikasi: landing, tiny, squid, adblock, all"; exit 1;;
+    esac
 elif [[ "$1" == "--install" && -n "$2" ]]; then
     case "$2" in
         landing) install_landing;;
