@@ -25,7 +25,7 @@ Semua aplikasi dan data disimpan di SDCard. ROM internal hanya untuk booting.
 ## Instalasi Cepat
 
 ```bash
-git clone https://github.com/username/miniserver.git /opt/miniserver
+git clone https://github.com/budijoi/miniserver.git /opt/miniserver
 cd /opt/miniserver
 chmod +x installer/install.sh
 ./installer/install.sh
