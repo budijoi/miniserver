@@ -245,10 +245,18 @@ deploy_landing() {
             chown www-data:www-data "$WWW_DIR/tiny.php" 2>/dev/null || true
         fi
     fi
-    chown -R www-data:www-data "$WWW_DIR" 2>/dev/null || true
-    chmod -R 755 "$WWW_DIR" 2>/dev/null || true
+    # Pastikan direktori file manager writable oleh www-data
+    for d in "My Document" "My Music" "My Pictures" "My Video"; do
+        [[ -d "$WWW_DIR/$d" ]] && chown www-data:www-data "$WWW_DIR/$d" && chmod 755 "$WWW_DIR/$d"
+    done
+    # Workspace khusus untuk TinyFileManager (bisa akses root "/" tapi nulis cuma di sini)
+    mkdir -p "$WWW_DIR/workspace"
+    chown www-data:www-data "$WWW_DIR/workspace"
+    chmod 755 "$WWW_DIR/workspace"
+    chown www-data:www-data "$WWW_DIR/tiny.php" 2>/dev/null || true
+    chmod 644 "$WWW_DIR/tiny.php" 2>/dev/null || true
     log_ok "Landing page: http://ip-address/"
-    [[ -f "$WWW_DIR/tiny.php" ]] && log_ok "File Manager:  http://ip-address/tiny.php"
+    [[ -f "$WWW_DIR/tiny.php" ]] && log_ok "File Manager:  http://ip-address/tiny.php (workspace: /var/www/html/workspace/)"
 }
 
 setup_tinyfilemanager() {
@@ -278,6 +286,9 @@ setup_tinyfilemanager() {
     chown www-data:www-data "$fm_path" 2>/dev/null || true
     chmod 644 "$fm_path"
     log_ok "TinyFileManager: http://ip-address/tiny.php (user: admin, pass: admin)"
+    log_ok "  - Browsing: seluruh filesystem (root /)"
+    log_ok "  - Create/Edit/Hapus: hanya di /var/www/html/ (keterbatasan user www-data)"
+    log_ok "  - Workspace aman: /var/www/html/workspace/"
 }
 
 configure_tinyfilemanager() {
@@ -513,10 +524,102 @@ menu() {
         4) install_adblock;;
         5) detect_sdcard; setup_sdcard;;
         h|H) uninstall_menu;;
-        a|A) detect_sdcard; setup_sdcard; install_landing; setup_tinyfilemanager; install_squid; install_adblock;;
+        a|A) detect_sdcard; setup_sdcard; install_landing; setup_tinyfilemanager; install_squid; install_adblock; show_summary;;
         q) exit 0;;
         *) sleep 1; menu;;
     esac
+}
+
+# ==================== SUMMARY ====================
+
+get_ip() {
+    local ip
+    ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+    if [[ -z "$ip" ]]; then
+        ip=$(ip route get 1 2>/dev/null | awk '{print $NF; exit}')
+    fi
+    echo "$ip"
+}
+
+show_summary() {
+    local ip=$(get_ip)
+    echo ""
+    echo -e "${GREEN}╔═══════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║         INSTALASI SELESAI                     ║${NC}"
+    echo -e "${GREEN}╚═══════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${CYAN}Hasil Instalasi:${NC}"
+    echo "  ───────────────────────────────────────────"
+    local ok=0 fail=0
+
+    # Landing page (web server)
+    if systemctl is-active nginx &>/dev/null || systemctl is-active apache2 &>/dev/null; then
+        echo -e "  ${GREEN}[✓]${NC} Landing Page (Nginx/Apache + PHP)"
+        ((ok++))
+    else
+        echo -e "  ${RED}[✗]${NC} Landing Page"
+        ((fail++))
+    fi
+
+    # TinyFileManager
+    if [[ -f "$WWW_DIR/tiny.php" ]]; then
+        echo -e "  ${GREEN}[✓]${NC} TinyFileManager"
+        ((ok++))
+    else
+        echo -e "  ${RED}[✗]${NC} TinyFileManager"
+        ((fail++))
+    fi
+
+    # Squid
+    if systemctl is-active squid &>/dev/null; then
+        echo -e "  ${GREEN}[✓]${NC} Squid-Cache"
+        ((ok++))
+    else
+        echo -e "  ${RED}[✗]${NC} Squid-Cache"
+        ((fail++))
+    fi
+
+    # Adblock (dnsmasq)
+    if systemctl is-active dnsmasq &>/dev/null && [[ -f /etc/dnsmasq.d/adblock.conf ]]; then
+        echo -e "  ${GREEN}[✓]${NC} Adblock (dnsmasq)"
+        ((ok++))
+    else
+        echo -e "  ${RED}[✗]${NC} Adblock (dnsmasq)"
+        ((fail++))
+    fi
+
+    # SDCard
+    if mountpoint -q "$SDCARD_MOUNT" 2>/dev/null; then
+        echo -e "  ${GREEN}[✓]${NC} SDCard Storage ($SDCARD_MOUNT)"
+        ((ok++))
+    else
+        echo -e "  ${YELLOW}[─]${NC} SDCard Storage (skip / tidak terdeteksi)"
+    fi
+
+    echo ""
+    echo -e "${CYAN}Rangkuman: ${GREEN}${ok} berhasil${NC}, ${RED}${fail} gagal${NC}"
+    echo ""
+
+    # Akses URLs
+    echo -e "${CYAN}Akses Aplikasi:${NC}"
+    echo "  ───────────────────────────────────────────"
+    [[ -f "$WWW_DIR/index.php" ]] && echo "  Landing Page  : http://${ip}/"
+    [[ -f "$WWW_DIR/tiny.php" ]] && echo "  File Manager  : http://${ip}/tiny.php (user: admin, pass: admin)"
+    systemctl is-active squid &>/dev/null && echo "  Squid Proxy   : http://${ip}:3128"
+    if systemctl is-active dnsmasq &>/dev/null && [[ -f /etc/dnsmasq.d/adblock.conf ]]; then
+        echo "  DNS Server    : ${ip} (port 53, adblock aktif)"
+    fi
+    mountpoint -q "$SDCARD_MOUNT" 2>/dev/null && echo "  SDCard Mount  : ${SDCARD_MOUNT}"
+    echo ""
+    echo "  Log Instalasi : ${LOG_FILE}"
+    echo ""
+    echo -e "${YELLOW}Tips:${NC}"
+    echo "  Jalankan installer lagi: sudo bash installer/install.sh"
+    echo "  Hapus aplikasi        : pilih menu 'h' di installer"
+    echo "  CLI install ulang     : sudo bash installer/install.sh --install <app>"
+    echo "  CLI hapus             : sudo bash installer/install.sh --uninstall <app>"
+    echo "  Restart service       : sudo systemctl restart <nginx|squid|dnsmasq>"
+    echo ""
 }
 
 # ==================== MAIN ====================
@@ -525,13 +628,7 @@ check_root
 
 if [[ "$1" == "--install-all" ]]; then
     detect_sdcard; setup_sdcard; install_landing; setup_tinyfilemanager; install_squid; install_adblock
-    echo ""
-    echo -e "${GREEN}========================================${NC}"
-    echo -e "${GREEN}  INSTALASI SELESAI!${NC}"
-    echo -e "${GREEN}========================================${NC}"
-    echo "Landing:     http://$(hostname -I | awk '{print $1}')"
-    echo "File Mgr:   http://$(hostname -I | awk '{print $1}')/tiny.php (admin/admin)"
-    echo "Squid:       port 3128"
+    show_summary
 elif [[ "$1" == "--uninstall" && -n "$2" ]]; then
     case "$2" in
         landing) uninstall_landing;;
