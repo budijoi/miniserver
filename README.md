@@ -50,7 +50,7 @@ Proyek ini adalah solusi All-In-One untuk menjadikan TV Box (B860H, X96mini, dan
 
 ```bash
 # Clone repositori
-git clone https://github.com/username/miniserver.git /opt/miniserver
+git clone https://github.com/budijoi/miniserver.git /opt/miniserver
 
 # Masuk ke direktori
 cd /opt/miniserver
