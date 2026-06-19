@@ -1,0 +1,28 @@
+# Filter Khusus Indonesia untuk Adblock
+# Tambahkan domain iklan Indonesia satu per baris
+# Format: domain.com
+
+# Iklan popup dan banner Indonesia
+# iklan-indo.com
+# popup-iklan.co.id
+
+# Iklan tracking Indonesia
+# tracking.id
+# analytics.co.id
+
+# Situs iklan Indonesia (contoh - akan diupdate otomatis)
+# adserver.co.id
+# banner.iklan.web.id
+# popunder.co.id
+
+# Filter akan diupdate otomatis dari sumber berikut:
+# - https://raw.githubusercontent.com/rey_public/filter/main/indonesian-adlist.txt
+# - https://raw.githubusercontent.com/rey_public/filter/main/indonesian-privacy.txt
+
+# Catatan:
+# File ini akan di-merge dengan filter dari sumber online
+# saat menjalankan script setup-adblock.sh --update
+#
+# Jika ada domain yang terblokir padahal bukan iklan,
+# hapus domain tersebut dari file ini atau tambahkan
+# ke whitelist di adblock.conf

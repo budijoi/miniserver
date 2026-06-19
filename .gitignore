@@ -1,0 +1,27 @@
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Logs
+*.log
+/var/
+
+# Temp
+/tmp/
+/temp/
+
+# Config override
+*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Private keys
+*.key
+*.pem
+*.cert
